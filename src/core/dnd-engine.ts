@@ -167,7 +167,7 @@ export class DndEngine {
 			this.dropFolder = this.dropSibling.parentElement!.closest<HTMLElement>(`${ROOT_FOLDER_SELECTOR}, .nav-folder`)!
 			const folderPath = this.plugin.getExplorerView().files.get(this.dropFolder)?.path ?? ROOT_PATH
 			const folderSettings = this.plugin.settings.items[folderPath] as FolderSettings
-			if (folderSettings.sortOrder === 'custom') {
+			if (folderSettings.sortOrder === 'custom' || folderSettings.sortOrder === 'byFrontmatterOrder') {
 				this.dropSibling.dataset.dropSibling = ''
 				this.dropSibling.dataset.insertPos = this.insertPos
 			} else {
@@ -228,7 +228,7 @@ export class DndEngine {
 		insertPosition: InsertPosition,
 	) {
 		const folderSettings = this.plugin.settings.items[dropFolderPath] as FolderSettings
-		if (draggingItem.path === newPath && folderSettings.sortOrder !== 'custom') {
+		if (draggingItem.path === newPath && folderSettings.sortOrder !== 'custom' && folderSettings.sortOrder !== 'byFrontmatterOrder') {
 			return this.log(`Item '${draggingItem.path}' is already in the target folder and folder does not have custom order`)
 		}
 		this.plugin.orderManager.move(draggingItem.path, newPath, siblingPath, insertPosition)

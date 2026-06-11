@@ -113,6 +113,7 @@ export default class Flexplorer extends Plugin {
 			}
 		}))
 		this.registerEvent(this.app.metadataCache.on('changed', file => {
+			if (this.orderManager._writingOrder) return
 			const parentPath = file.parent!.path
 			const folderSettings = this.settings.items[parentPath] as FolderSettings | undefined
 			if (folderSettings?.sortOrder === 'byFrontmatterOrder') {

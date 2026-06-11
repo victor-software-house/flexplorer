@@ -29,6 +29,10 @@ export const populateSortMenu = (
 				folderSettings.sortOrder = sortOrder
 				void plugin.saveSettings()
 				plugin.sortExplorer()
+
+				if (sortOrder === 'byFrontmatterOrder') {
+					void plugin.orderManager.ensureFrontmatterOrder(folderPath)
+				}
 			}))
 	})
 	return menu.setNoIcon().addSeparator()

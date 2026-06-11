@@ -12,6 +12,9 @@ const NO_ORDER = Number.MAX_SAFE_INTEGER
 export class OrderManager {
 	private readonly log = initLog('ORDER-MANAGER', '#ff5000')
 
+	/** Set while writing frontmatter so the metadata 'changed' listener skips re-sorting */
+	_writingOrder = false
+
 	constructor(private readonly plugin: Flexplorer) {}
 
 	syncItems(root = this.plugin.app.vault.root) {
@@ -85,6 +88,11 @@ export class OrderManager {
 		if (!parentChanged) {
 			this.log('Directory did not change, sorting explorer')
 			this.plugin.sortExplorer()
+		}
+
+		// Write frontmatter order values after DnD reorder
+		if (toParent?.sortOrder === 'byFrontmatterOrder') {
+			void this.syncFrontmatterOrder(toParentPath)
 		}
 	}
 
@@ -200,20 +208,107 @@ export class OrderManager {
 	}
 
 	private getFrontmatterOrder(item: TAbstractFile): number {
-		const mCache = this.plugin.app.metadataCache
-		let file: TFile | null = null
-
-		if (item instanceof TFile) {
-			file = item
-		} else if (item instanceof TFolder) {
-			// For folders, read the folder note (same-name .md inside the folder)
-			file = this.plugin.app.vault.getFileByPath(`${item.path}/${item.name}.md`)
-		}
-
+		const file = this.resolveFile(item)
 		if (!file) return NO_ORDER
 
-		const raw: unknown = mCache.getFileCache(file)?.frontmatter?.order
+		const raw: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.order
 		return typeof raw === 'number' ? raw : NO_ORDER
+	}
+
+	/** Resolve a vault item to its representative TFile (folder note for folders) */
+	private resolveFile(item: TAbstractFile): TFile | null {
+		if (item instanceof TFile) return item
+		if (item instanceof TFolder) {
+			return this.plugin.app.vault.getFileByPath(`${item.path}/${item.name}.md`)
+		}
+		return null
+	}
+
+	/**
+	 * Write sequential `order` values (1..N) to all children's frontmatter in a folder.
+	 * Uses the current customOrder array as the source of truth for sequence.
+	 */
+	async syncFrontmatterOrder(folderPath: string) {
+		const folder = this.plugin.app.vault.getFolderByPath(folderPath)
+		if (!folder) return
+
+		const folderSettings = this.plugin.settings.items[folderPath] as FolderSettings | undefined
+		if (!folderSettings) return
+
+		const orderedNames = folderSettings.customOrder
+		this.log(`Syncing frontmatter order for '${folderPath}': ${orderedNames.join(', ')}`)
+
+		this._writingOrder = true
+		try {
+			for (let i = 0; i < orderedNames.length; i++) {
+				const child = folder.children.find(c => c.name === orderedNames[i])
+				if (!child) continue
+
+				const file = this.resolveFile(child)
+				if (!file) continue
+
+				const currentOrder = this.getFrontmatterOrder(child)
+				const newOrder = i + 1
+				if (currentOrder === newOrder) continue
+
+				await this.plugin.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+					fm.order = newOrder
+				})
+				this.log(`  ${file.path}: ${currentOrder === NO_ORDER ? '—' : currentOrder} → ${newOrder}`)
+			}
+		} finally {
+			this._writingOrder = false
+		}
+
+		this.plugin.sortExplorer()
+	}
+
+	/**
+	 * Lazy init: for any child in the folder missing `order` frontmatter,
+	 * write the order based on its current position in customOrder.
+	 * Returns true if any writes were needed.
+	 */
+	async ensureFrontmatterOrder(folderPath: string): Promise<boolean> {
+		const folder = this.plugin.app.vault.getFolderByPath(folderPath)
+		if (!folder) return false
+
+		const folderSettings = this.plugin.settings.items[folderPath] as FolderSettings | undefined
+		if (!folderSettings) return false
+
+		// Collect children that are missing the order field
+		const missing: { child: TAbstractFile, file: TFile, position: number }[] = []
+		const orderedNames = folderSettings.customOrder
+
+		for (let i = 0; i < orderedNames.length; i++) {
+			const child = folder.children.find(c => c.name === orderedNames[i])
+			if (!child) continue
+
+			const file = this.resolveFile(child)
+			if (!file) continue
+
+			const raw: unknown = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter?.order
+			if (typeof raw !== 'number') {
+				missing.push({ child, file, position: i + 1 })
+			}
+		}
+
+		if (missing.length === 0) return false
+
+		this.log(`Initializing frontmatter order for ${missing.length} files in '${folderPath}'`)
+
+		this._writingOrder = true
+		try {
+			for (const { file, position } of missing) {
+				await this.plugin.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+					fm.order = position
+				})
+				this.log(`  ${file.path}: — → ${position}`)
+			}
+		} finally {
+			this._writingOrder = false
+		}
+
+		return true
 	}
 
 	private persistAndLog(message: string) {
