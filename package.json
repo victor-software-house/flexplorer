@@ -1,14 +1,21 @@
 {
 	"name": "flexplorer",
-	"version": "4.1.0",
+	"version": "4.2.0",
 	"description": "Obsidian File Explorer Enhancer",
 	"author": "kh4f, victor-software-house",
 	"license": "MIT",
 	"repository": "https://github.com/victor-software-house/flexplorer",
 	"bugs": "https://github.com/victor-software-house/flexplorer/issues",
 	"homepage": "https://github.com/victor-software-house/flexplorer#readme",
-	"keywords": ["flexplorer", "obsidian-flexplorer", "obsidian-plugin", "obsidian-file-explorer"],
-	"trustedDependencies": ["obsidian-typings"],
+	"keywords": [
+		"flexplorer",
+		"obsidian-flexplorer",
+		"obsidian-plugin",
+		"obsidian-file-explorer"
+	],
+	"trustedDependencies": [
+		"obsidian-typings"
+	],
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
