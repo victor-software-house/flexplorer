@@ -7,6 +7,7 @@ import type { BaseItemSettings, FolderSettings, SortOrder } from '@/types'
 
 const DEFAULT_ITEM_SETTINGS: BaseItemSettings = { isPinned: false, isHidden: false }
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true })
+const NO_ORDER = Number.MAX_SAFE_INTEGER
 
 export class OrderManager {
 	private readonly log = initLog('ORDER-MANAGER', '#ff5000')
@@ -171,6 +172,12 @@ export class OrderManager {
 					if (aIndex === -1 || bIndex === -1) return this.compareByName(a, b)
 					return aIndex - bIndex
 				}
+				case 'byFrontmatterOrder': {
+					const aOrder = this.getFrontmatterOrder(a)
+					const bOrder = this.getFrontmatterOrder(b)
+					if (aOrder !== bOrder) return aOrder - bOrder
+					return this.compareByName(a, b)
+				}
 				case 'byNameReverse': return this.compareByName(b, a)
 				case 'byCreatedTime': return this.compareByTimestamp(a, b, 'ctime', 'asc')
 				case 'byCreatedTimeReverse': return this.compareByTimestamp(a, b, 'ctime', 'desc')
@@ -190,6 +197,23 @@ export class OrderManager {
 		const aTimestamp = a instanceof TFile ? a.stat[type] : -Infinity
 		const bTimestamp = b instanceof TFile ? b.stat[type] : -Infinity
 		return direction === 'asc' ? aTimestamp - bTimestamp : bTimestamp - aTimestamp
+	}
+
+	private getFrontmatterOrder(item: TAbstractFile): number {
+		const mCache = this.plugin.app.metadataCache
+		let file: TFile | null = null
+
+		if (item instanceof TFile) {
+			file = item
+		} else if (item instanceof TFolder) {
+			// For folders, read the folder note (same-name .md inside the folder)
+			file = this.plugin.app.vault.getFileByPath(`${item.path}/${item.name}.md`)
+		}
+
+		if (!file) return NO_ORDER
+
+		const raw: unknown = mCache.getFileCache(file)?.frontmatter?.order
+		return typeof raw === 'number' ? raw : NO_ORDER
 	}
 
 	private persistAndLog(message: string) {

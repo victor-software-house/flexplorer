@@ -6,6 +6,7 @@ import type { FolderSettings, SortOrder } from '@/types'
 
 const SORT_OPTIONS: [string, SortOrder][] = [
 	['Custom order', 'custom'],
+	['Frontmatter order', 'byFrontmatterOrder'],
 	['File name (A → Z)', 'byName'],
 	['File name (Z → A)', 'byNameReverse'],
 	['Created time (new → old)', 'byCreatedTimeReverse'],

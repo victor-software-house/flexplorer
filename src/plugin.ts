@@ -112,6 +112,14 @@ export default class Flexplorer extends Plugin {
 				this.sortExplorer()
 			}
 		}))
+		this.registerEvent(this.app.metadataCache.on('changed', file => {
+			const parentPath = file.parent!.path
+			const folderSettings = this.settings.items[parentPath] as FolderSettings | undefined
+			if (folderSettings?.sortOrder === 'byFrontmatterOrder') {
+				this.log(`Metadata changed in '${file.path}' with frontmatter-order sorting, sorting explorer`)
+				this.sortExplorer()
+			}
+		}))
 		this.registerEvent(
 			this.app.workspace.on('file-menu', (menu, file) => {
 				this.log(`File menu opened for '${file.path}'`)

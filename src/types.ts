@@ -8,6 +8,7 @@ export type SortOrder =
 	| 'byCreatedTimeReverse'
 	| 'byModifiedTime'
 	| 'byModifiedTimeReverse'
+	| 'byFrontmatterOrder'
 
 export interface Settings {
 	items: Record<string, ItemSettings>
