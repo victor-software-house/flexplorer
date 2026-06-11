@@ -1,12 +1,12 @@
 {
 	"name": "flexplorer",
-	"version": "4.0.3",
-	"description": "🗃️ Obsidian File Explorer Enhancer",
-	"author": "kh4f",
+	"version": "4.1.0",
+	"description": "Obsidian File Explorer Enhancer",
+	"author": "kh4f, victor-software-house",
 	"license": "MIT",
-	"repository": "https://github.com/kh4f/flexplorer",
-	"bugs": "https://github.com/kh4f/flexplorer/issues",
-	"homepage": "https://github.com/kh4f/flexplorer#readme",
+	"repository": "https://github.com/victor-software-house/flexplorer",
+	"bugs": "https://github.com/victor-software-house/flexplorer/issues",
+	"homepage": "https://github.com/victor-software-house/flexplorer#readme",
 	"keywords": ["flexplorer", "obsidian-flexplorer", "obsidian-plugin", "obsidian-file-explorer"],
 	"trustedDependencies": ["obsidian-typings"],
 	"main": "main.js",
@@ -18,9 +18,13 @@
 		"build": "bun prod",
 		"typecheck": "tsc",
 		"lint": "eslint",
-		"release": "bunx relion -b manifest.json -t ''"
+		"changeset": "changeset",
+		"version": "changeset version && bun scripts/version-bump.ts",
+		"release": "bun run build && bun scripts/release.ts"
 	},
 	"devDependencies": {
+		"@changesets/changelog-github": "^0.7.0",
+		"@changesets/cli": "^2.31.0",
 		"@eslint-react/eslint-plugin": "^5.8.16",
 		"@eslint/js": "^10.0.1",
 		"@stylistic/eslint-plugin": "^5.10.0",

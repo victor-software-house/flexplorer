@@ -7,5 +7,5 @@
 		"paths": { "@/*": ["./src/*"] },
 		"jsx": "react-jsx",
 	},
-	"include": ["**/*.ts", "**/*.tsx"]
+	"include": ["src/**/*.ts", "src/**/*.tsx", "*.config.ts"]
 }
